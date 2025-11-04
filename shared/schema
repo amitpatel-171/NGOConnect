@@ -1,0 +1,117 @@
+import { sql } from "drizzle-orm";
+import { pgTable, text, varchar, timestamp, integer, decimal, boolean } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  role: text("role").notNull().default("donor"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
+export const events = pgTable("events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  date: timestamp("date").notNull(),
+  location: text("location").notNull(),
+  image: text("image"),
+  capacity: integer("capacity").notNull(),
+  registered: integer("registered").notNull().default(0),
+  status: text("status").notNull().default("upcoming"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertEventSchema = createInsertSchema(events).omit({
+  id: true,
+  registered: true,
+  createdAt: true,
+});
+
+export type InsertEvent = z.infer<typeof insertEventSchema>;
+export type Event = typeof events.$inferSelect;
+
+export const eventRegistrations = pgTable("event_registrations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  eventId: varchar("event_id").notNull().references(() => events.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  registeredAt: timestamp("registered_at").notNull().defaultNow(),
+});
+
+export const insertEventRegistrationSchema = createInsertSchema(eventRegistrations).omit({
+  id: true,
+  registeredAt: true,
+});
+
+export type InsertEventRegistration = z.infer<typeof insertEventRegistrationSchema>;
+export type EventRegistration = typeof eventRegistrations.$inferSelect;
+
+export const donations = pgTable("donations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: 'set null' }),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  donationType: text("donation_type").notNull(),
+  paymentId: text("payment_id"),
+  status: text("status").notNull().default("pending"),
+  donorName: text("donor_name"),
+  donorEmail: text("donor_email"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertDonationSchema = createInsertSchema(donations).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertDonation = z.infer<typeof insertDonationSchema>;
+export type Donation = typeof donations.$inferSelect;
+
+export const volunteerApplications = pgTable("volunteer_applications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  availability: text("availability").notNull(),
+  interests: text("interests").array().notNull(),
+  message: text("message"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertVolunteerApplicationSchema = createInsertSchema(volunteerApplications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertVolunteerApplication = z.infer<typeof insertVolunteerApplicationSchema>;
+export type VolunteerApplication = typeof volunteerApplications.$inferSelect;
+
+export const contactSubmissions = pgTable("contact_submissions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("new"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertContactSubmissionSchema = createInsertSchema(contactSubmissions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertContactSubmission = z.infer<typeof insertContactSubmissionSchema>;
+export type ContactSubmission = typeof contactSubmissions.$inferSelect;
